@@ -9,3 +9,35 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+@layer components {
+    /* Used by shared content pages (checkout, account) that are not overridden per theme */
+    .theme-btn-primary {
+        background-color: #111827;
+        color: #ffffff;
+        transition: opacity 150ms;
+    }
+    .theme-btn-primary:hover { opacity: 0.85; }
+    .theme-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .theme-variant-selected {
+        background-color: #111827;
+        color: #ffffff;
+        border-color: #111827;
+    }
+
+    .theme-nav-active {
+        background-color: #111827;
+        color: #ffffff;
+    }
+
+    .theme-avatar {
+        background-color: #111827;
+        color: #ffffff;
+    }
+
+    .theme-badge {
+        background-color: #111827;
+        color: #ffffff;
+    }
+}

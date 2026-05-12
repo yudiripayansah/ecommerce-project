@@ -1,6 +1,6 @@
 @extends('theme.layouts.app')
 
-@section('title', $q ? 'Search: ' . $q . ' — ' . config('app.name', 'Store') : 'Search — ' . config('app.name', 'Store'))
+@section('title', $q ? 'Search: ' . $q . ' — ' . store_name() : 'Search — ' . store_name())
 @section('meta_description', $q ? 'Search results for "' . $q . '"' : 'Search our store')
 
 @section('content')

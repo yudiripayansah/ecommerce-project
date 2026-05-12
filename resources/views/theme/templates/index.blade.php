@@ -1,6 +1,6 @@
 @extends('theme.layouts.app')
 
-@section('title', config('app.name', 'Store') . ' — Home')
+@section('title', store_name() . ' — Home')
 @section('meta_description', 'Discover our curated selection of quality products.')
 
 @section('content')

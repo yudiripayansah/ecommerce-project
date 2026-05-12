@@ -1,7 +1,7 @@
 <x-mail::message>
 # Selamat Datang, {{ $customer->name }}!
 
-Terima kasih telah mendaftar di **{{ config('app.name') }}**. Akun Anda telah berhasil dibuat.
+Terima kasih telah mendaftar di **{{ store_name() }}**. Akun Anda telah berhasil dibuat.
 
 <x-mail::panel>
 **Email:** {{ $customer->email }}
@@ -16,5 +16,5 @@ Mulai Belanja
 Jika Anda memiliki pertanyaan, jangan ragu untuk menghubungi kami.
 
 Salam hangat,<br>
-{{ config('app.name') }}
+{{ store_name() }}
 </x-mail::message>

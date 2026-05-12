@@ -1,6 +1,6 @@
 @extends('theme.layouts.app')
 
-@section('title', 'Akun Saya — ' . config('app.name'))
+@section('title', 'Akun Saya — ' . store_name())
 
 @section('content')
 <x-account-layout>
@@ -56,7 +56,7 @@
                 </div>
 
                 <div class="pt-2">
-                    <button type="submit" class="bg-gray-900 text-white font-medium text-sm rounded-lg px-6 py-2.5 hover:bg-gray-700 transition-colors">
+                    <button type="submit" class="theme-btn-primary font-medium text-sm rounded-lg px-6 py-2.5 transition-colors">
                         Simpan Profil
                     </button>
                 </div>
@@ -97,7 +97,7 @@
                 </div>
 
                 <div class="pt-2">
-                    <button type="submit" class="bg-gray-900 text-white font-medium text-sm rounded-lg px-6 py-2.5 hover:bg-gray-700 transition-colors">
+                    <button type="submit" class="theme-btn-primary font-medium text-sm rounded-lg px-6 py-2.5 transition-colors">
                         Ubah Password
                     </button>
                 </div>

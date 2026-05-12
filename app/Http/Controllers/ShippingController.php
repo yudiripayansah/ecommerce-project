@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Setting;
 use App\Services\RajaOngkirService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -43,7 +44,7 @@ class ShippingController extends Controller
 
         set_time_limit(60);
 
-        $originCityId      = (int) config('services.rajaongkir.origin_city');
+        $originCityId      = (int) Setting::get('rajaongkir_origin_city_id', config('services.rajaongkir.origin_city'));
         $destinationCityId = $request->integer('destination_city_id');
         $couriers          = explode(':', config('services.rajaongkir.couriers', 'jne'));
 

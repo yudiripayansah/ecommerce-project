@@ -21,7 +21,7 @@ class RajaOngkirService
      */
     public function getProvinces(): array
     {
-        $path = storage_path('app/rajaongkir/provinces.json');
+        $path = $this->rajaongkirPath('provinces.json');
 
         if (file_exists($path)) {
             return json_decode(file_get_contents($path), true) ?: [];
@@ -38,7 +38,7 @@ class RajaOngkirService
      */
     public function getCities(int $provinceId): array
     {
-        $path = storage_path("app/rajaongkir/cities_{$provinceId}.json");
+        $path = $this->rajaongkirPath("cities_{$provinceId}.json");
 
         if (file_exists($path)) {
             return json_decode(file_get_contents($path), true) ?: [];
@@ -66,6 +66,13 @@ class RajaOngkirService
         ]);
 
         return $response['rajaongkir']['results'][0]['costs'] ?? [];
+    }
+
+    private function rajaongkirPath(string $filename): string
+    {
+        // Use base_path so the path is always relative to the project root,
+        // not affected by FilesystemTenancyBootstrapper changing storage_path().
+        return base_path('storage/app/rajaongkir/' . $filename);
     }
 
     private function get(string $path, array $query = []): array

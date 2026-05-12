@@ -45,18 +45,32 @@ Setiap tenant mendapat database MySQL tersendiri (`tenanttoko-abc`) yang di-migr
 | Pelanggan | Profil pelanggan, riwayat pesanan, alamat tersimpan |
 | File | Manajemen file/gambar toko |
 | Halaman | CMS halaman statis |
+| Pengaturan Toko | Nama toko, rekening bank, kota asal pengiriman, Midtrans, WhatsApp |
 
 ### Panel SaaS Super Admin (`/super`)
 - Daftar semua tenant (toko)
 - Buat toko baru → database + migrasi jalan otomatis
 - Edit nama, paket (Free / Starter / Pro), dan status aktif
 
+### Pengaturan Per-Toko (via admin panel)
+Setiap toko mengkonfigurasi milik sendiri — tidak ada yang berbagi:
+
+| Setting | Keterangan |
+|---|---|
+| Informasi toko | Nama, email, telepon |
+| Rekening bank | Untuk payment method Transfer Bank |
+| Kota asal pengiriman | Provinsi + kota, dipakai kalkulasi ongkir RajaOngkir |
+| Midtrans Client & Server Key | Uang langsung masuk ke rekening client |
+| Mode Midtrans | Sandbox (testing) atau Production (live) |
+| Fonnte Token | Token WhatsApp masing-masing toko |
+| Nomor WA Admin | Penerima notifikasi pesanan baru |
+
 ### Integrasi Eksternal
 | Layanan | Fungsi |
 |---|---|
-| **Midtrans** | Payment gateway (redirect & notification webhook) |
-| **RajaOngkir Starter** | Ongkir live berdasarkan berat & kota tujuan |
-| **Fonnte** | Notifikasi WhatsApp ke pelanggan & admin |
+| **Midtrans** | Payment gateway — per-tenant, uang langsung ke rekening client |
+| **RajaOngkir Starter** | Ongkir live berdasarkan kota asal toko & kota tujuan pembeli |
+| **Fonnte** | Notifikasi WhatsApp — per-tenant token |
 
 ### Notifikasi
 - **Email**: Pesanan baru, konfirmasi pembayaran, update status (template Mailable per kejadian)
@@ -92,7 +106,7 @@ php artisan key:generate
 Edit `.env` — bagian wajib diisi:
 
 ```env
-# Database (central — untuk tabel tenants & domains)
+# Database central (untuk tabel tenants & domains)
 DB_DATABASE=ecommerce
 DB_USERNAME=root
 DB_PASSWORD=
@@ -105,31 +119,24 @@ REDIS_CLIENT=predis
 SESSION_DRIVER=redis
 CACHE_STORE=redis
 
-# Midtrans
-MIDTRANS_SERVER_KEY=
-MIDTRANS_CLIENT_KEY=
-MIDTRANS_IS_PRODUCTION=false
-
-# RajaOngkir
+# RajaOngkir (API key untuk production; di local pakai mock)
 RAJAONGKIR_API_KEY=
-RAJAONGKIR_ORIGIN_CITY_ID=501   # ID kota asal pengiriman (501 = Surabaya)
 RAJAONGKIR_COURIERS=jne:pos:tiki
 
-# WhatsApp via Fonnte
-FONNTE_TOKEN=
-FONNTE_ADMIN_WHATSAPP=628xxxxxxxxxx
+# Midtrans & Fonnte — opsional di level .env
+# Lebih baik diset per-toko via Settings > Pengaturan Toko
+MIDTRANS_IS_PRODUCTION=false
 ```
+
+> Midtrans, Fonnte, dan kota asal pengiriman **dikonfigurasi per-toko** melalui panel admin masing-masing toko (`/admin` → Pengaturan Toko), bukan di `.env`. Nilai `.env` hanya dipakai sebagai fallback jika toko belum mengisi settings-nya.
 
 ### 3. Migrasi database central
 
 ```bash
-# Buat tabel tenants & domains di database central
-php artisan migrate --path=database/migrations/2019_09_15_000010_create_tenants_table.php
-php artisan migrate --path=database/migrations/2019_09_15_000020_create_domains_table.php
-
-# Tabel bawaan Laravel (users untuk super admin, cache, jobs)
 php artisan migrate
 ```
+
+Ini membuat tabel `tenants`, `domains`, `users` (super admin), `cache`, `jobs`, dan `sessions` di database central.
 
 ### 4. Buat akun super admin SaaS
 
@@ -148,54 +155,137 @@ php artisan serve
 
 ---
 
-## Manajemen Tenant
+## Setup Toko untuk Client
 
-### Buat toko baru via CLI
+### Langkah per client (ulangi untuk setiap client)
+
+**Step 1 — Buat tenant via CLI**
 
 ```bash
-php artisan tenant:create {id} "{Nama Toko}" \
+php artisan tenant:create {subdomain} "{Nama Toko}" \
   --plan=starter \
-  --admin-email=owner@toko.com \
-  --admin-password=rahasia
+  --admin-email=owner@email.com \
+  --admin-password=passwordRahasia
 ```
 
-Contoh:
+Perintah ini otomatis:
+1. Membuat record tenant di database central
+2. Membuat database MySQL baru (`tenant{subdomain}`)
+3. Menjalankan semua migrasi e-commerce di database tenant
+4. Mendaftarkan domain (`{subdomain}.localhost` atau `{subdomain}.CENTRAL_DOMAIN`)
+5. Membuat user admin pertama di dalam database tenant
+
+**Step 2 — Tambahkan subdomain ke `/etc/hosts`** *(hanya local dev)*
+
+```
+127.0.0.1  {subdomain}.localhost
+```
+
+Di production, cukup pastikan wildcard DNS `*.domain.com` sudah mengarah ke server.
+
+**Step 3 — Login ke admin toko**
+
+```
+http://{subdomain}.localhost:8000/admin
+```
+
+**Step 4 — Isi Pengaturan Toko**
+
+Buka **Settings → Pengaturan Toko**, lalu isi semua section:
+
+| Section | Yang perlu diisi |
+|---|---|
+| Informasi Toko | Nama toko, email, telepon |
+| Rekening Bank | Tambahkan 1+ rekening untuk Transfer Bank |
+| Pengiriman | Pilih provinsi & kota asal pengiriman toko |
+| Midtrans | Client Key + Server Key dari akun Midtrans client |
+| Notifikasi WhatsApp | Token Fonnte + nomor WA admin toko |
+
+**Step 5 — Input produk**
+
+- Manual: menu **Produk → New Product**
+- Import massal: **Produk → Import** → download template Excel → isi → upload
+
+**Step 6 — Test transaksi end-to-end**
+
+1. Buka `http://{subdomain}.localhost:8000`
+2. Tambah produk ke keranjang → Checkout
+3. Test COD → cek pesanan masuk di admin
+4. Test Transfer Bank → upload bukti → admin konfirmasi
+5. Test Midtrans → gunakan [kartu test sandbox Midtrans](https://docs.midtrans.com/docs/testing-payment-on-sandbox)
+
+---
+
+### Contoh: setup 3 client sekaligus
 
 ```bash
+# Client 1
 php artisan tenant:create toko-budi "Toko Pak Budi" \
-  --plan=free \
-  --admin-email=budi@toko.com \
-  --admin-password=password123
+  --plan=starter \
+  --admin-email=budi@tokobudi.com \
+  --admin-password=passwordBudi123
+
+# Client 2
+php artisan tenant:create toko-sari "Toko Bu Sari" \
+  --plan=starter \
+  --admin-email=sari@tokosari.com \
+  --admin-password=passwordSari456
+
+# Client 3
+php artisan tenant:create toko-andi "Toko Pak Andi" \
+  --plan=pro \
+  --admin-email=andi@tokoandi.com \
+  --admin-password=passwordAndi789
 ```
 
-Perintah ini secara otomatis:
-1. Membuat record tenant di database central
-2. Membuat database MySQL baru (`tenanttoko-budi`)
-3. Menjalankan semua migrasi e-commerce di database tenant
-4. Mendaftarkan domain (`toko-budi.localhost`)
-5. Membuat user admin di dalam database tenant
-
-### Buat toko baru via Super Admin Panel
-
-Buka `http://localhost:8000/super` → Login → Toko → Tambah Toko
-
-### Testing di lokal (subdomain)
-
-Tambahkan entri ke `/etc/hosts`:
+Tambahkan ke `/etc/hosts`:
 
 ```
 127.0.0.1  toko-budi.localhost
+127.0.0.1  toko-sari.localhost
+127.0.0.1  toko-andi.localhost
 ```
 
-Kemudian akses:
-- Storefront: `http://toko-budi.localhost:8000`
-- Admin toko: `http://toko-budi.localhost:8000/admin`
+Masing-masing toko login ke admin panel mereka sendiri dan isi pengaturan toko secara mandiri. Data antar toko sepenuhnya terisolasi.
 
-### Re-migrate semua tenant (setelah ada migrasi baru)
+### Cek semua toko dari Super Admin
+
+```
+http://localhost:8000/super
+```
+
+Atau via CLI:
 
 ```bash
-php artisan tenants:migrate
+php artisan tinker --no-interaction <<'PHP'
+App\Models\Tenant::with('domains')->get()->each(function ($t) {
+    echo $t->id . ' | ' . $t->name . ' | ' . $t->plan . ' | '
+        . ($t->domains->first()?->domain ?? '-') . "\n";
+});
+PHP
 ```
+
+---
+
+## Manajemen Tenant
+
+### Buat toko via Super Admin Panel (tanpa CLI)
+
+Buka `http://localhost:8000/super` → Login → Toko → Tambah Toko
+
+### Re-migrate setelah ada skema baru
+
+```bash
+# Semua tenant
+php artisan tenants:migrate
+
+# Satu tenant saja
+php artisan tenants:migrate --tenants=toko-budi
+```
+
+### Nonaktifkan toko sementara
+
+Buka Super Admin → edit tenant → toggle **Aktif** → Save.
 
 ---
 
@@ -210,7 +300,7 @@ php artisan tenants:migrate
 | `cache`, `jobs`, `sessions` | Bawaan Laravel |
 
 ### Database Tenant (`tenant{id}`)
-Setiap toko mendapat salinan penuh dari tabel berikut:
+Setiap toko mendapat salinan penuh dari tabel berikut, sepenuhnya terisolasi:
 
 | Tabel | Keterangan |
 |---|---|
@@ -219,33 +309,43 @@ Setiap toko mendapat salinan penuh dari tabel berikut:
 | `categories`, `tags`, `collections` | Pengelompokan produk |
 | `orders`, `order_items` | Data pesanan |
 | `customers`, `customer_addresses` | Data pelanggan |
-| `settings` | Konfigurasi toko (nama, logo, dll.) |
+| `settings` | Semua konfigurasi toko (Midtrans key, Fonnte token, dll.) |
 | `pages` | Halaman statis CMS |
 | `store_files` | Media/gambar toko |
 | `notifications` | Notifikasi database Filament |
+
+### Isolasi file upload
+
+File yang diupload (gambar produk, bukti transfer, dll.) disimpan di:
+
+```
+storage/app/public/tenants/{tenant-id}/store-files/YYYY/MM/
+storage/app/public/tenants/{tenant-id}/payment-proofs/
+```
+
+File antar toko tidak tercampur.
 
 ---
 
 ## Data RajaOngkir (Lokal)
 
-Agar checkout tetap berjalan tanpa koneksi ke API RajaOngkir (berguna saat development), data provinsi dan kota sudah di-cache ke file JSON lokal:
+Data provinsi dan kota sudah di-cache ke file JSON agar checkout berjalan tanpa koneksi API (berguna saat development):
 
 ```
 storage/app/rajaongkir/
-  provinces.json          # 34 provinsi Indonesia
-  cities_1.json           # Kota-kota di provinsi 1 (Aceh)
-  cities_2.json           # dst.
+  provinces.json       # 34 provinsi Indonesia
+  cities_1.json        # Kota-kota provinsi Aceh
   ...
-  cities_34.json
+  cities_34.json       # Kota-kota provinsi Papua Barat Daya
 ```
 
-Di environment `local`, endpoint `/shipping/cost` mengembalikan data mock (tidak hit API). Di production, kalkulasi ongkir berjalan live.
+Di environment `local`, endpoint `/shipping/cost` otomatis mengembalikan data mock tanpa hit API. Di production, kalkulasi ongkir berjalan live menggunakan kota asal yang diset per-toko.
 
-Untuk memperbarui data kota dari API (production):
+Untuk memperbarui data kota dari API:
 
 ```bash
 php artisan rajaongkir:cache
-php artisan rajaongkir:cache --province=11  # hanya satu provinsi
+php artisan rajaongkir:cache --province=11  # satu provinsi saja
 ```
 
 ---
@@ -254,10 +354,11 @@ php artisan rajaongkir:cache --province=11  # hanya satu provinsi
 
 | Perintah | Keterangan |
 |---|---|
-| `php artisan tenant:create` | Buat tenant baru lengkap dengan DB & admin |
-| `php artisan rajaongkir:cache` | Ambil & cache data provinsi/kota dari API RajaOngkir |
+| `php artisan tenant:create {id} "{nama}" --plan= --admin-email= --admin-password=` | Buat tenant baru lengkap dengan DB, migrasi, & admin |
 | `php artisan tenants:migrate` | Jalankan migrasi baru ke semua database tenant |
 | `php artisan tenants:migrate --tenants=toko-budi` | Migrasi ke satu tenant saja |
+| `php artisan rajaongkir:cache` | Ambil & cache data provinsi/kota dari API RajaOngkir |
+| `php artisan rajaongkir:cache --province=11` | Cache satu provinsi saja |
 
 ---
 

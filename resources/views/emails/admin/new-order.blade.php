@@ -3,7 +3,7 @@
 
 Halo Admin,
 
-Ada order baru yang masuk di **{{ config('app.name') }}**.
+Ada order baru yang masuk di **{{ store_name() }}**.
 
 <x-mail::panel>
 **No. Order:** {{ $order->order_number }}
@@ -38,5 +38,5 @@ Lihat Detail Order
 </x-mail::button>
 
 Salam,<br>
-{{ config('app.name') }}
+{{ store_name() }}
 </x-mail::message>

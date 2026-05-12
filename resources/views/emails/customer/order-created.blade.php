@@ -38,5 +38,5 @@ Lihat Detail Pesanan
 </x-mail::button>
 
 Salam,<br>
-{{ config('app.name') }}
+{{ store_name() }}
 </x-mail::message>

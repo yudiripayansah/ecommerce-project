@@ -7,8 +7,13 @@
         <div class="flex items-center justify-between h-16">
 
             {{-- Logo --}}
-            <a href="{{ route('home') }}" class="font-bold text-xl tracking-tight">
-                {{ config('app.name', 'Store') }}
+            @php $logoUrl = store_logo_url(); @endphp
+            <a href="{{ route('home') }}" class="flex items-center shrink-0">
+                @if ($logoUrl)
+                    <img src="{{ $logoUrl }}" alt="{{ store_name() }}" class="h-8 w-auto object-contain">
+                @else
+                    <span class="font-bold text-xl tracking-tight">{{ store_name() }}</span>
+                @endif
             </a>
 
             {{-- Desktop Nav --}}

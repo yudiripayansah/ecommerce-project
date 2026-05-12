@@ -29,8 +29,8 @@ class CheckoutController extends Controller
 
         $total        = collect($cart)->sum(fn ($item) => $item['price'] * $item['quantity']);
         $bankAccounts = $this->bankAccounts();
-        $midtransClientKey = config('midtrans.client_key');
-        $midtransSnapUrl   = config('midtrans.snap_url');
+        $midtransClientKey = Setting::get('midtrans_client_key', config('midtrans.client_key'));
+        $midtransSnapUrl   = MidtransService::snapUrl();
 
         /** @var \App\Models\Customer|null $customer */
         $customer       = auth('customer')->user();
@@ -206,7 +206,7 @@ class CheckoutController extends Controller
             Storage::disk('public')->delete($order->payment_proof);
         }
 
-        $path = $request->file('proof')->store('payment-proofs', 'public');
+        $path = $request->file('proof')->store(tenant_storage_prefix() . 'payment-proofs', 'public');
         $order->update(['payment_proof' => $path]);
 
         return back()->with('proof_uploaded', true);

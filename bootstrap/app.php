@@ -19,6 +19,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'midtrans/notification',
         ]);
+
+        // Initialize tenant context for ALL web requests (including Livewire updates).
+        // Gracefully skips central domains and unknown domains.
+        $middleware->prependToGroup('web', \App\Http\Middleware\InitializeTenancyByDomainIfTenant::class);
+        $middleware->appendToGroup('web', \App\Http\Middleware\ApplyStoreTheme::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -65,7 +65,6 @@
                     <p class="text-sm font-semibold mt-1">{{ rupiah($item['price']) }}</p>
 
                     <div class="flex items-center gap-3 mt-2">
-                        {{-- Jumlah --}}
                         <form method="POST" action="{{ route('cart.update', $key) }}" class="flex items-center border border-gray-200 rounded-lg overflow-hidden">
                             @csrf
                             <button type="submit" name="quantity" value="{{ max(0, $item['quantity'] - 1) }}"
@@ -75,7 +74,6 @@
                                     class="px-2 py-1 text-gray-600 hover:bg-gray-50 text-sm">+</button>
                         </form>
 
-                        {{-- Hapus --}}
                         <form method="POST" action="{{ route('cart.remove', $key) }}">
                             @csrf
                             <button type="submit" class="text-xs text-gray-400 hover:text-red-500 transition-colors">Hapus</button>

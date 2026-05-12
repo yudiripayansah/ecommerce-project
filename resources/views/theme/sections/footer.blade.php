@@ -3,7 +3,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
 
             <div>
-                <h3 class="font-bold text-gray-900 mb-3">{{ config('app.name', 'Toko') }}</h3>
+                <h3 class="font-bold text-gray-900 mb-3">{{ store_name() }}</h3>
                 <p class="text-sm text-gray-500 leading-relaxed">
                     Temukan produk berkualitas terbaik untuk kebutuhan Anda.
                 </p>
@@ -30,7 +30,7 @@
         </div>
 
         <div class="mt-10 pt-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-400">
-            <p>&copy; {{ date('Y') }} {{ config('app.name', 'Toko') }}. Semua hak dilindungi.</p>
+            <p>&copy; {{ date('Y') }} {{ store_name() }}. Semua hak dilindungi.</p>
         </div>
     </div>
 </footer>

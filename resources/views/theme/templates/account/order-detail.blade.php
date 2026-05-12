@@ -1,7 +1,7 @@
 @use('Illuminate\Support\Facades\Storage')
 @extends('theme.layouts.app')
 
-@section('title', 'Pesanan ' . $order->order_number . ' — ' . config('app.name'))
+@section('title', 'Pesanan ' . $order->order_number . ' — ' . store_name())
 
 @section('content')
 <x-account-layout>
@@ -184,7 +184,7 @@
                                        x-on:change="fileName = $event.target.files[0]?.name">
                             </label>
                             <button type="submit"
-                                    class="shrink-0 bg-gray-900 text-white text-xs font-medium px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                                    class="shrink-0 theme-btn-primary text-xs font-medium px-4 py-2 rounded-lg transition-colors">
                                 Ganti
                             </button>
                         </div>
@@ -206,7 +206,7 @@
                                    x-on:change="fileName = $event.target.files[0]?.name">
                         </label>
                         <button type="submit"
-                                class="mt-3 w-full bg-gray-900 text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-gray-700 transition-colors">
+                                class="mt-3 w-full theme-btn-primary text-sm font-semibold py-2.5 rounded-xl transition-colors">
                             Kirim Bukti Transfer
                         </button>
                     </form>

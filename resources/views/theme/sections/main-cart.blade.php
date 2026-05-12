@@ -103,7 +103,7 @@
                     <p class="text-xs text-gray-400 mt-2">Pajak dan biaya dihitung saat checkout.</p>
 
                     <a href="{{ route('checkout') }}"
-                       class="mt-5 block w-full text-center bg-gray-900 text-white font-semibold py-3.5 rounded-xl hover:bg-gray-700 transition-colors text-sm">
+                       class="mt-5 block w-full text-center theme-btn-primary font-semibold py-3.5 rounded-xl transition-colors text-sm">
                         Lanjutkan ke Checkout
                     </a>
 
@@ -125,7 +125,7 @@
             <h2 class="text-xl font-semibold text-gray-700 mb-2">Keranjang Anda kosong</h2>
             <p class="text-gray-400 text-sm mb-6">Sepertinya belum ada yang ditambahkan.</p>
             <a href="{{ route('collections.show', 'all') }}"
-               class="inline-flex items-center gap-2 bg-gray-900 text-white text-sm font-semibold px-6 py-3 rounded-full hover:bg-gray-700 transition-colors">
+               class="inline-flex items-center gap-2 theme-btn-primary text-sm font-semibold px-6 py-3 rounded-full transition-colors">
                 Mulai belanja
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>

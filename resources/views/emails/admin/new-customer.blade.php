@@ -3,7 +3,7 @@
 
 Halo Admin,
 
-Ada pelanggan baru yang baru saja mendaftar di **{{ config('app.name') }}**.
+Ada pelanggan baru yang baru saja mendaftar di **{{ store_name() }}**.
 
 <x-mail::panel>
 **Nama:** {{ $customer->name }}
@@ -20,5 +20,5 @@ Lihat Detail Pelanggan
 </x-mail::button>
 
 Salam,<br>
-{{ config('app.name') }}
+{{ store_name() }}
 </x-mail::message>

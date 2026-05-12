@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Order;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -13,7 +14,9 @@ class WhatsAppService
     public function sendOrderCreated(Order $order): void
     {
         $customerPhone = $this->normalizePhone($order->customer_phone);
-        $adminPhone    = $this->normalizePhone(config('services.fonnte.admin_whatsapp', ''));
+        $adminPhone    = $this->normalizePhone(
+            Setting::get('fonnte_admin_whatsapp', config('services.fonnte.admin_whatsapp', ''))
+        );
 
         $customerMsg = $this->orderCreatedCustomerMessage($order);
         $adminMsg    = $this->orderCreatedAdminMessage($order);
@@ -107,10 +110,11 @@ class WhatsAppService
 
     private function send(string $phone, string $message): void
     {
-        $token = config('services.fonnte.token');
+        // Per-tenant token takes priority, falls back to global env config
+        $token = Setting::get('fonnte_token', config('services.fonnte.token'));
 
         if (! $token) {
-            Log::warning('WhatsApp: FONNTE_TOKEN tidak dikonfigurasi');
+            Log::warning('WhatsApp: FONNTE_TOKEN tidak dikonfigurasi untuk tenant ini');
             return;
         }
 

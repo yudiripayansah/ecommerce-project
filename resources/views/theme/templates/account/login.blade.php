@@ -1,6 +1,6 @@
 @extends('theme.layouts.app')
 
-@section('title', 'Login — ' . config('app.name'))
+@section('title', 'Login — ' . store_name())
 
 @section('content')
 <div class="min-h-[calc(100vh-9rem)] flex items-center justify-center px-4 py-16">
@@ -48,7 +48,7 @@
                 <label for="remember" class="text-sm text-gray-600 select-none">Ingat saya</label>
             </div>
 
-            <button type="submit" class="w-full bg-gray-900 text-white font-medium text-sm rounded-lg px-4 py-3 hover:bg-gray-700 transition-colors">
+            <button type="submit" class="w-full theme-btn-primary font-medium text-sm rounded-lg px-4 py-3 transition-colors">
                 Masuk
             </button>
         </form>

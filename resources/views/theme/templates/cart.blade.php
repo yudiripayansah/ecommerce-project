@@ -1,6 +1,6 @@
 @extends('theme.layouts.app')
 
-@section('title', 'Cart — ' . config('app.name', 'Store'))
+@section('title', 'Cart — ' . store_name())
 
 @section('content')
     @include('theme.sections.main-cart')

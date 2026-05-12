@@ -87,7 +87,7 @@ class PageResource extends Resource
                                                             ->label(false)
                                                             ->multiple()
                                                             ->disk('public')
-                                                            ->directory('store-files/' . now()->format('Y/m'))
+                                                            ->directory(tenant_storage_prefix() . 'store-files/' . now()->format('Y/m'))
                                                             ->visibility('public')
                                                             ->acceptedFileTypes([
                                                                 'image/jpeg', 'image/jpg', 'image/png',

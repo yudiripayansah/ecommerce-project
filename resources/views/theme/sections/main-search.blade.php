@@ -17,7 +17,7 @@
                 >
             </div>
             <button type="submit"
-                    class="px-5 py-3 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-700 transition-colors shrink-0">
+                    class="px-5 py-3 theme-btn-primary text-sm font-semibold rounded-xl transition-colors shrink-0">
                 Cari
             </button>
         </div>
@@ -66,7 +66,7 @@
                 <p class="text-base font-medium text-gray-600 mb-1">Produk tidak ditemukan</p>
                 <p class="text-sm">Coba kata kunci lain atau jelajahi koleksi kami.</p>
                 <a href="{{ route('collections.show', 'all') }}"
-                   class="inline-flex items-center gap-2 mt-6 bg-gray-900 text-white text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-gray-700 transition-colors">
+                   class="inline-flex items-center gap-2 mt-6 theme-btn-primary text-sm font-semibold px-5 py-2.5 rounded-full transition-colors">
                     Lihat semua produk
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>

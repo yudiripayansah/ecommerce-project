@@ -7,8 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\StoreFile;
-use App\Models\ProductView;
 
 class Product extends Model
 {
@@ -63,11 +61,6 @@ class Product extends Model
     public function variants(): HasMany
     {
         return $this->hasMany(ProductVariant::class)->orderBy('position');
-    }
-
-    public function images(): HasMany
-    {
-        return $this->hasMany(ProductImage::class)->orderBy('position');
     }
 
     public function media(): BelongsToMany

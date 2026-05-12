@@ -1,6 +1,6 @@
 @extends('theme.layouts.app')
 
-@section('title', ($collection->meta_title ?? $collection->title) . ' — ' . config('app.name', 'Store'))
+@section('title', ($collection->meta_title ?? $collection->title) . ' — ' . store_name())
 @section('meta_description', $collection->meta_description ?? '')
 
 @section('content')

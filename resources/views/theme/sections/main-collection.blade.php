@@ -7,7 +7,7 @@
 @endphp
 
 {{-- Header koleksi --}}
-<section class="relative {{ $imgSrc ? 'bg-gray-900' : 'bg-gray-50' }} overflow-hidden">
+<section class="relative {{ $imgSrc ? 'theme-hero' : 'bg-gray-50' }} overflow-hidden">
     @if ($imgSrc)
         <img src="{{ $imgSrc }}" alt="{{ $collection->title }}"
              class="absolute inset-0 w-full h-full object-cover opacity-30">

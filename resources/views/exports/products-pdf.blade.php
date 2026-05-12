@@ -79,7 +79,7 @@
 </table>
 
 <div class="footer">
-    {{ config('app.name') }} &nbsp;·&nbsp; Products Export
+    {{ store_name() }} &nbsp;·&nbsp; Products Export
 </div>
 
 </body>

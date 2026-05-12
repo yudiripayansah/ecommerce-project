@@ -52,7 +52,7 @@ class OrderController extends Controller
             Storage::disk('public')->delete($order->payment_proof);
         }
 
-        $path = $request->file('proof')->store('payment-proofs', 'public');
+        $path = $request->file('proof')->store(tenant_storage_prefix() . 'payment-proofs', 'public');
         $order->update(['payment_proof' => $path]);
 
         return back()->with('success', 'Bukti transfer berhasil dikirim.');

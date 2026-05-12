@@ -1,6 +1,6 @@
 @extends('theme.layouts.app')
 
-@section('title', 'Daftar Akun — ' . config('app.name'))
+@section('title', 'Daftar Akun — ' . store_name())
 
 @section('content')
 <div class="min-h-[calc(100vh-9rem)] flex items-center justify-center px-4 py-16">
@@ -81,7 +81,7 @@
                 >
             </div>
 
-            <button type="submit" class="w-full bg-gray-900 text-white font-medium text-sm rounded-lg px-4 py-3 hover:bg-gray-700 transition-colors">
+            <button type="submit" class="w-full theme-btn-primary font-medium text-sm rounded-lg px-4 py-3 transition-colors">
                 Buat Akun
             </button>
         </form>

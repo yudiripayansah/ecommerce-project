@@ -4,7 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', config('app.name', 'Store'))</title>
+    @php $faviconUrl = store_favicon_url(); @endphp
+    @if ($faviconUrl)<link rel="icon" href="{{ $faviconUrl }}">@endif
+    <title>@yield('title', store_name())</title>
     <meta name="description" content="@yield('meta_description', '')">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Order;
+use App\Models\Setting;
 use Midtrans\Config;
 use Midtrans\Snap;
 
@@ -10,10 +11,21 @@ class MidtransService
 {
     public function __construct()
     {
-        Config::$serverKey        = config('midtrans.server_key');
-        Config::$isProduction     = config('midtrans.is_production');
-        Config::$isSanitized      = config('midtrans.is_sanitized');
-        Config::$is3ds            = config('midtrans.is_3ds');
+        $this->boot();
+    }
+
+    private function boot(): void
+    {
+        $serverKey    = Setting::get('midtrans_server_key', config('midtrans.server_key'));
+        $isProduction = filter_var(
+            Setting::get('midtrans_is_production', config('midtrans.is_production', false)),
+            FILTER_VALIDATE_BOOLEAN
+        );
+
+        Config::$serverKey    = $serverKey;
+        Config::$isProduction = $isProduction;
+        Config::$isSanitized  = config('midtrans.is_sanitized', true);
+        Config::$is3ds        = config('midtrans.is_3ds', true);
     }
 
     public function createSnapToken(Order $order): string
@@ -29,11 +41,11 @@ class MidtransService
                 'phone'      => $order->customer_phone,
             ],
             'shipping_address' => [
-                'first_name' => $order->customer_name,
-                'phone'      => $order->customer_phone,
-                'address'    => $order->shipping_address,
-                'city'       => $order->shipping_city,
-                'postal_code'=> $order->shipping_postal_code,
+                'first_name'   => $order->customer_name,
+                'phone'        => $order->customer_phone,
+                'address'      => $order->shipping_address,
+                'city'         => $order->shipping_city,
+                'postal_code'  => $order->shipping_postal_code,
                 'country_code' => 'IDN',
             ],
             'item_details' => $this->buildItemDetails($order),
@@ -61,5 +73,17 @@ class MidtransService
         }
 
         return $items;
+    }
+
+    public static function snapUrl(): string
+    {
+        $isProduction = filter_var(
+            Setting::get('midtrans_is_production', config('midtrans.is_production', false)),
+            FILTER_VALIDATE_BOOLEAN
+        );
+
+        return $isProduction
+            ? 'https://app.midtrans.com/snap/snap.js'
+            : 'https://app.sandbox.midtrans.com/snap/snap.js';
     }
 }

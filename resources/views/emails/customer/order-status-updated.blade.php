@@ -18,7 +18,7 @@ Pesanan Anda sedang kami siapkan untuk pengiriman.
 @elseif ($order->status === 'shipped')
 Pesanan Anda telah dikirim.{{ $order->tracking_number ? ' No. resi: **' . $order->tracking_number . '**' : '' }}
 @elseif ($order->status === 'delivered')
-Pesanan Anda telah sampai. Terima kasih telah berbelanja di **{{ config('app.name') }}**!
+Pesanan Anda telah sampai. Terima kasih telah berbelanja di **{{ store_name() }}**!
 @elseif ($order->status === 'cancelled')
 Pesanan Anda telah dibatalkan. Jika ada pertanyaan, silakan hubungi kami.
 @endif
@@ -28,5 +28,5 @@ Lihat Detail Pesanan
 </x-mail::button>
 
 Salam,<br>
-{{ config('app.name') }}
+{{ store_name() }}
 </x-mail::message>

@@ -16,7 +16,6 @@ class Collection extends Model
         'title',
         'handle',
         'description',
-        'image',
         'store_file_id',
         'meta_title',
         'meta_description',

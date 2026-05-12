@@ -121,7 +121,7 @@
                                             type="button"
                                             @click="selected.option1 = val; findVariant()"
                                             :class="selected.option1 === val
-                                                ? 'bg-gray-900 text-white border-gray-900'
+                                                ? 'theme-variant-selected'
                                                 : 'bg-white text-gray-700 border-gray-300 hover:border-gray-600'"
                                             class="px-4 py-2 text-sm border rounded-lg transition-all"
                                             x-text="val"
@@ -143,7 +143,7 @@
                                             type="button"
                                             @click="selected.option2 = val; findVariant()"
                                             :class="selected.option2 === val
-                                                ? 'bg-gray-900 text-white border-gray-900'
+                                                ? 'theme-variant-selected'
                                                 : 'bg-white text-gray-700 border-gray-300 hover:border-gray-600'"
                                             class="px-4 py-2 text-sm border rounded-lg transition-all"
                                             x-text="val"
@@ -165,7 +165,7 @@
                                             type="button"
                                             @click="selected.option3 = val; findVariant()"
                                             :class="selected.option3 === val
-                                                ? 'bg-gray-900 text-white border-gray-900'
+                                                ? 'theme-variant-selected'
                                                 : 'bg-white text-gray-700 border-gray-300 hover:border-gray-600'"
                                             class="px-4 py-2 text-sm border rounded-lg transition-all"
                                             x-text="val"
@@ -194,7 +194,7 @@
                 {{-- Submit buttons --}}
                 <div class="flex flex-col gap-3">
                     <button type="submit"
-                            class="w-full bg-gray-900 text-white font-semibold py-3.5 rounded-xl hover:bg-gray-700 transition-colors text-sm">
+                            class="w-full theme-btn-primary font-semibold py-3.5 rounded-xl text-sm">
                         Tambah ke Keranjang
                     </button>
                     <button type="submit" name="redirect_to_cart" value="1"

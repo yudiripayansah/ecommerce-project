@@ -50,7 +50,7 @@ class ListStoreFiles extends ListRecords
                         ->label('Select files to upload')
                         ->multiple()
                         ->disk('public')
-                        ->directory('store-files/' . now()->format('Y/m'))
+                        ->directory(tenant_storage_prefix() . 'store-files/' . now()->format('Y/m'))
                         ->visibility('public')
                         ->acceptedFileTypes([
                             // Images

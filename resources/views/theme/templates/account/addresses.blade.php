@@ -1,6 +1,6 @@
 @extends('theme.layouts.app')
 
-@section('title', 'Alamat Saya — ' . config('app.name'))
+@section('title', 'Alamat Saya — ' . store_name())
 
 @section('content')
 <x-account-layout>
@@ -64,7 +64,7 @@
     <div class="flex items-center justify-between mb-6">
         <h2 class="text-lg font-semibold text-gray-900">Alamat Saya</h2>
         <button @click="openAdd()"
-            class="inline-flex items-center gap-2 bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+            class="inline-flex items-center gap-2 theme-btn-primary text-sm font-medium px-4 py-2 rounded-lg transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
             </svg>
@@ -87,7 +87,7 @@
                 <div class="flex items-start justify-between gap-3 mb-1">
                     <p class="font-semibold text-gray-900 text-sm leading-snug">{{ $address->name }}</p>
                     @if ($address->is_default)
-                        <span class="shrink-0 text-[10px] font-semibold uppercase tracking-widest bg-gray-900 text-white px-2 py-0.5 rounded-full">Utama</span>
+                        <span class="shrink-0 text-[10px] font-semibold uppercase tracking-widest theme-badge px-2 py-0.5 rounded-full">Utama</span>
                     @endif
                 </div>
                 @if ($address->phone)
@@ -145,7 +145,7 @@
                         Batal
                     </button>
                     <button type="submit"
-                        class="flex-1 bg-gray-900 text-white text-sm font-medium rounded-lg px-4 py-2.5 hover:bg-gray-700 transition-colors">
+                        class="flex-1 theme-btn-primary text-sm font-medium rounded-lg px-4 py-2.5 transition-colors">
                         Simpan
                     </button>
                 </div>
@@ -177,7 +177,7 @@
                         Batal
                     </button>
                     <button type="submit"
-                        class="flex-1 bg-gray-900 text-white text-sm font-medium rounded-lg px-4 py-2.5 hover:bg-gray-700 transition-colors">
+                        class="flex-1 theme-btn-primary text-sm font-medium rounded-lg px-4 py-2.5 transition-colors">
                         Simpan
                     </button>
                 </div>
