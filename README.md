@@ -1,58 +1,280 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# EZ-Store
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Platform e-commerce multi-tenant berbasis SaaS untuk UMKM Indonesia. Setiap toko berjalan di subdomain sendiri dengan database yang sepenuhnya terisolasi.
 
-## About Laravel
+**Stack:** Laravel 13 · Filament 5 · MySQL · Redis · stancl/tenancy
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Arsitektur
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```
+ezstore.id/super          → Panel SaaS (kelola semua toko)
+toko-abc.ezstore.id       → Storefront toko ABC
+toko-abc.ezstore.id/admin → Panel admin toko ABC (Filament)
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Setiap tenant mendapat database MySQL tersendiri (`tenanttoko-abc`) yang di-migrate otomatis saat tenant dibuat. Tidak ada data yang tercampur antar toko.
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Fitur
 
-## Code of Conduct
+### Storefront (Frontend)
+- Halaman beranda dengan hero, produk unggulan, dan koleksi
+- Halaman produk dengan pilihan varian (ukuran, warna, dll.)
+- Pencarian produk
+- Koleksi / kategori produk
+- Keranjang belanja (session-based)
+- Checkout dengan:
+  - Dropdown provinsi & kota via **RajaOngkir** (cascading)
+  - Kalkulasi ongkir live (JNE, POS, TIKI)
+  - Pilihan pembayaran: Transfer Bank, COD, atau Midtrans (kartu kredit, GoPay, dll.)
+  - Upload bukti transfer
+- Halaman sukses pesanan dengan rincian subtotal + ongkir + total
+- Akun pelanggan: profil, daftar pesanan, manajemen alamat
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Panel Admin Toko (`/admin`)
+| Menu | Keterangan |
+|---|---|
+| Dashboard | Statistik penjualan, grafik, produk terlaris, stok rendah |
+| Produk | CRUD produk, varian, gambar, tracking stok, ekspor Excel/PDF |
+| Kategori & Tag | Pengelompokan produk |
+| Koleksi | Kurasi produk ke dalam koleksi |
+| Pesanan | Daftar pesanan, update status, input nomor resi |
+| Pelanggan | Profil pelanggan, riwayat pesanan, alamat tersimpan |
+| File | Manajemen file/gambar toko |
+| Halaman | CMS halaman statis |
 
-## Security Vulnerabilities
+### Panel SaaS Super Admin (`/super`)
+- Daftar semua tenant (toko)
+- Buat toko baru → database + migrasi jalan otomatis
+- Edit nama, paket (Free / Starter / Pro), dan status aktif
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Integrasi Eksternal
+| Layanan | Fungsi |
+|---|---|
+| **Midtrans** | Payment gateway (redirect & notification webhook) |
+| **RajaOngkir Starter** | Ongkir live berdasarkan berat & kota tujuan |
+| **Fonnte** | Notifikasi WhatsApp ke pelanggan & admin |
 
-## License
+### Notifikasi
+- **Email**: Pesanan baru, konfirmasi pembayaran, update status (template Mailable per kejadian)
+- **WhatsApp** (via Fonnte): Pesanan baru, pembayaran dikonfirmasi, pesanan dikirim (lengkap dengan nomor resi)
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+---
+
+## Cara Install
+
+### Prasyarat
+- PHP 8.3+
+- MySQL 8+
+- Redis
+- Composer
+- Node.js & npm
+
+### 1. Clone & install dependensi
+
+```bash
+git clone <repo-url> ez-store
+cd ez-store
+composer install
+npm install && npm run build
+```
+
+### 2. Konfigurasi environment
+
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+Edit `.env` — bagian wajib diisi:
+
+```env
+# Database (central — untuk tabel tenants & domains)
+DB_DATABASE=ecommerce
+DB_USERNAME=root
+DB_PASSWORD=
+
+# Domain utama SaaS (tanpa http://)
+CENTRAL_DOMAIN=localhost
+
+# Redis (untuk session & cache)
+REDIS_CLIENT=predis
+SESSION_DRIVER=redis
+CACHE_STORE=redis
+
+# Midtrans
+MIDTRANS_SERVER_KEY=
+MIDTRANS_CLIENT_KEY=
+MIDTRANS_IS_PRODUCTION=false
+
+# RajaOngkir
+RAJAONGKIR_API_KEY=
+RAJAONGKIR_ORIGIN_CITY_ID=501   # ID kota asal pengiriman (501 = Surabaya)
+RAJAONGKIR_COURIERS=jne:pos:tiki
+
+# WhatsApp via Fonnte
+FONNTE_TOKEN=
+FONNTE_ADMIN_WHATSAPP=628xxxxxxxxxx
+```
+
+### 3. Migrasi database central
+
+```bash
+# Buat tabel tenants & domains di database central
+php artisan migrate --path=database/migrations/2019_09_15_000010_create_tenants_table.php
+php artisan migrate --path=database/migrations/2019_09_15_000020_create_domains_table.php
+
+# Tabel bawaan Laravel (users untuk super admin, cache, jobs)
+php artisan migrate
+```
+
+### 4. Buat akun super admin SaaS
+
+```bash
+php artisan make:filament-user
+# Masukkan nama, email, password
+# Akses: http://localhost:8000/super
+```
+
+### 5. Jalankan server
+
+```bash
+php artisan serve
+# Buka http://localhost:8000/super
+```
+
+---
+
+## Manajemen Tenant
+
+### Buat toko baru via CLI
+
+```bash
+php artisan tenant:create {id} "{Nama Toko}" \
+  --plan=starter \
+  --admin-email=owner@toko.com \
+  --admin-password=rahasia
+```
+
+Contoh:
+
+```bash
+php artisan tenant:create toko-budi "Toko Pak Budi" \
+  --plan=free \
+  --admin-email=budi@toko.com \
+  --admin-password=password123
+```
+
+Perintah ini secara otomatis:
+1. Membuat record tenant di database central
+2. Membuat database MySQL baru (`tenanttoko-budi`)
+3. Menjalankan semua migrasi e-commerce di database tenant
+4. Mendaftarkan domain (`toko-budi.localhost`)
+5. Membuat user admin di dalam database tenant
+
+### Buat toko baru via Super Admin Panel
+
+Buka `http://localhost:8000/super` → Login → Toko → Tambah Toko
+
+### Testing di lokal (subdomain)
+
+Tambahkan entri ke `/etc/hosts`:
+
+```
+127.0.0.1  toko-budi.localhost
+```
+
+Kemudian akses:
+- Storefront: `http://toko-budi.localhost:8000`
+- Admin toko: `http://toko-budi.localhost:8000/admin`
+
+### Re-migrate semua tenant (setelah ada migrasi baru)
+
+```bash
+php artisan tenants:migrate
+```
+
+---
+
+## Struktur Database
+
+### Database Central (`ecommerce`)
+| Tabel | Keterangan |
+|---|---|
+| `users` | Akun super admin SaaS |
+| `tenants` | Daftar toko (id, name, plan, is_active) |
+| `domains` | Domain per toko (misal: `toko-budi.localhost`) |
+| `cache`, `jobs`, `sessions` | Bawaan Laravel |
+
+### Database Tenant (`tenant{id}`)
+Setiap toko mendapat salinan penuh dari tabel berikut:
+
+| Tabel | Keterangan |
+|---|---|
+| `users` | Admin toko |
+| `products`, `product_variants`, `product_images` | Katalog produk & stok |
+| `categories`, `tags`, `collections` | Pengelompokan produk |
+| `orders`, `order_items` | Data pesanan |
+| `customers`, `customer_addresses` | Data pelanggan |
+| `settings` | Konfigurasi toko (nama, logo, dll.) |
+| `pages` | Halaman statis CMS |
+| `store_files` | Media/gambar toko |
+| `notifications` | Notifikasi database Filament |
+
+---
+
+## Data RajaOngkir (Lokal)
+
+Agar checkout tetap berjalan tanpa koneksi ke API RajaOngkir (berguna saat development), data provinsi dan kota sudah di-cache ke file JSON lokal:
+
+```
+storage/app/rajaongkir/
+  provinces.json          # 34 provinsi Indonesia
+  cities_1.json           # Kota-kota di provinsi 1 (Aceh)
+  cities_2.json           # dst.
+  ...
+  cities_34.json
+```
+
+Di environment `local`, endpoint `/shipping/cost` mengembalikan data mock (tidak hit API). Di production, kalkulasi ongkir berjalan live.
+
+Untuk memperbarui data kota dari API (production):
+
+```bash
+php artisan rajaongkir:cache
+php artisan rajaongkir:cache --province=11  # hanya satu provinsi
+```
+
+---
+
+## Perintah Artisan Kustom
+
+| Perintah | Keterangan |
+|---|---|
+| `php artisan tenant:create` | Buat tenant baru lengkap dengan DB & admin |
+| `php artisan rajaongkir:cache` | Ambil & cache data provinsi/kota dari API RajaOngkir |
+| `php artisan tenants:migrate` | Jalankan migrasi baru ke semua database tenant |
+| `php artisan tenants:migrate --tenants=toko-budi` | Migrasi ke satu tenant saja |
+
+---
+
+## Teknologi yang Digunakan
+
+| Paket | Versi | Fungsi |
+|---|---|---|
+| `laravel/framework` | ^13.0 | Core framework |
+| `filament/filament` | ^5.5 | Admin panel (tenant & super) |
+| `stancl/tenancy` | ^3.10 | Multi-tenant (database per tenant) |
+| `midtrans/midtrans-php` | ^2.6 | Payment gateway |
+| `maatwebsite/excel` | ^3.1 | Export produk ke Excel |
+| `barryvdh/laravel-dompdf` | ^3.1 | Export produk ke PDF |
+| `predis/predis` | ^3.4 | Redis client (PHP murni, tanpa ekstensi phpredis) |
+
+---
+
+## Lisensi
+
+Proprietary — 360&5
