@@ -18,6 +18,7 @@ use App\Http\Controllers\ProductImportTemplateController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ShippingController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Middleware\CheckTenantActive;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
@@ -25,6 +26,7 @@ Route::middleware([
     'web',
     InitializeTenancyByDomain::class,
     PreventAccessFromCentralDomains::class,
+    CheckTenantActive::class,
 ])->group(function () {
 
     Route::get('/', [HomeController::class, 'index'])->name('home');
