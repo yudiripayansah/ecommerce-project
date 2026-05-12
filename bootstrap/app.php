@@ -15,6 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'customer.auth'  => \App\Http\Middleware\CustomerAuthenticated::class,
             'customer.guest' => \App\Http\Middleware\CustomerGuest::class,
         ]);
+
+        $middleware->validateCsrfTokens(except: [
+            'midtrans/notification',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
