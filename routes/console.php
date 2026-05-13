@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Cek stok menipis setiap hari pukul 08.00
 Schedule::command('stock:check-low')->dailyAt('08:00');
+
+// Bebaskan reservasi stok yang sudah kedaluwarsa setiap jam
+Schedule::command('stock:release-expired')->hourly();

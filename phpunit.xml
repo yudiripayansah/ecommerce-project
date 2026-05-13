@@ -32,5 +32,9 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <!-- Disable external services in tests -->
+        <env name="RAJAONGKIR_API_KEY" value="test-key"/>
+        <env name="MIDTRANS_SERVER_KEY" value="test-server-key"/>
+        <env name="MIDTRANS_CLIENT_KEY" value="test-client-key"/>
     </php>
 </phpunit>

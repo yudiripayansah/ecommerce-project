@@ -2,23 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\Admin\NewOrderMail;
-use App\Mail\Customer\OrderCreatedMail;
-use App\Models\Customer;
+use App\Actions\Checkout\ValidateStockAction;
+use App\Actions\Inventory\DecrementStockAction;
+use App\Actions\Inventory\ReserveStockAction;
+use App\Actions\Order\PlaceOrderAction;
+use App\Actions\Payment\CreatePaymentAction;
+use App\Actions\Payment\UploadPaymentProofAction;
+use App\Jobs\SendOrderNotificationsJob;
 use App\Models\Order;
-use App\Models\OrderItem;
-use App\Models\Product;
-use App\Models\ProductVariant;
 use App\Models\Setting;
 use App\Services\MidtransService;
 use App\Services\RajaOngkirService;
-use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Storage;
 
 class CheckoutController extends Controller
 {
+    public function __construct(
+        private ValidateStockAction  $validateStock,
+        private PlaceOrderAction     $placeOrder,
+        private CreatePaymentAction  $createPayment,
+        private ReserveStockAction   $reserveStock,
+        private DecrementStockAction $decrementStock,
+        private UploadPaymentProofAction $uploadProof,
+    ) {}
+
     public function index()
     {
         $cart = session('cart', []);
@@ -27,8 +34,8 @@ class CheckoutController extends Controller
             return redirect()->route('cart');
         }
 
-        $total        = collect($cart)->sum(fn ($item) => $item['price'] * $item['quantity']);
-        $bankAccounts = $this->bankAccounts();
+        $total             = collect($cart)->sum(fn ($item) => $item['price'] * $item['quantity']);
+        $bankAccounts      = $this->bankAccounts();
         $midtransClientKey = Setting::get('midtrans_client_key', config('midtrans.client_key'));
         $midtransSnapUrl   = MidtransService::snapUrl();
 
@@ -74,102 +81,46 @@ class CheckoutController extends Controller
             'notes'                => 'nullable|string|max:1000',
         ]);
 
-        // Validasi stok semua item sebelum membuat order
-        foreach ($cart as $item) {
-            if ($item['variant_id']) {
-                $variant = ProductVariant::find($item['variant_id']);
-                if ($variant && $variant->track_stock && $variant->inventory_quantity < $item['quantity']) {
-                    $msg = "Stok \"{$item['title']}" . ($item['variant_title'] ? " ({$item['variant_title']})" : '') . "\" tidak mencukupi.";
-                    return back()->withErrors(['stock' => $msg])->withInput();
-                }
-            } else {
-                $product = Product::find($item['product_id']);
-                if ($product && $product->track_stock && $product->inventory_quantity < $item['quantity']) {
-                    return back()->withErrors(['stock' => "Stok \"{$item['title']}\" tidak mencukupi."])->withInput();
-                }
-            }
+        // ── Step 1: Validate available stock (on-hand minus reserved) ─────────
+        if ($error = $this->validateStock->handle($cart)) {
+            return back()->withErrors(['stock' => $error])->withInput();
         }
 
-        $customer = Customer::updateOrCreate(
-            ['email' => $validated['customer_email']],
-            [
-                'name'  => $validated['customer_name'],
-                'phone' => $validated['customer_phone'],
-            ]
-        );
+        // ── Step 2: Create customer + order + items in one transaction ─────────
+        $order = $this->placeOrder->handle($cart, $validated);
 
-        $subtotal     = collect($cart)->sum(fn ($item) => $item['price'] * $item['quantity']);
-        $shippingCost = (int) ($validated['shipping_cost'] ?? 0);
-        $total        = $subtotal + $shippingCost;
-
-        $order = Order::create([
-            'customer_id'          => $customer->id,
-            'order_number'         => 'ORD-' . strtoupper(uniqid()),
-            'customer_name'        => $validated['customer_name'],
-            'customer_email'       => $validated['customer_email'],
-            'customer_phone'       => $validated['customer_phone'],
-            'shipping_address'     => $validated['shipping_address'],
-            'shipping_city'        => $validated['shipping_city'],
-            'shipping_province'    => $validated['shipping_province'],
-            'shipping_postal_code' => $validated['shipping_postal_code'],
-            'payment_method'       => $validated['payment_method'],
-            'notes'                => $validated['notes'] ?? null,
-            'status'               => 'pending',
-            'subtotal'             => $subtotal,
-            'shipping_cost'        => $shippingCost,
-            'total'                => $total,
-        ]);
-
-        foreach ($cart as $item) {
-            OrderItem::create([
-                'order_id'      => $order->id,
-                'product_id'    => $item['product_id'] ?? null,
-                'variant_id'    => $item['variant_id'] ?: null,
-                'title'         => $item['title'],
-                'variant_title' => $item['variant_title'] ?: null,
-                'price'         => $item['price'],
-                'quantity'      => $item['quantity'],
-                'image'         => $item['image'] ?: null,
-            ]);
+        // ── Step 3: Initiate payment ───────────────────────────────────────────
+        try {
+            $payment = $this->createPayment->handle($order);
+        } catch (\Throwable) {
+            $order->delete();
+            return response()->json(['error' => 'Gagal menghubungi payment gateway. Silakan coba lagi.'], 422);
         }
 
-        // Midtrans: buat snap token lalu kembalikan sebagai JSON
-        if ($validated['payment_method'] === 'midtrans') {
-            try {
-                $snapToken = (new MidtransService)->createSnapToken($order->load('items'));
-                $order->update(['snap_token' => $snapToken]);
+        // ── Step 4a: Midtrans — reserve stock, webhook handles notifications ──
+        if ($payment->isAsync) {
+            $this->reserveStock->handle($order->load('items'), 'midtrans');
+            session()->forget('cart');
+            session(['order_success' => $order->order_number]);
 
-                session()->forget('cart');
-                session(['order_success' => $order->order_number]);
-
-                return response()->json([
-                    'snap_token'   => $snapToken,
-                    'order_number' => $order->order_number,
-                    'success_url'  => route('checkout.success'),
-                ]);
-            } catch (\Throwable) {
-                $order->delete();
-                return response()->json(['error' => 'Gagal menghubungi payment gateway. Silakan coba lagi.'], 422);
-            }
+            return response()->json($payment->toArray($order->order_number, route('checkout.success')));
         }
 
-        self::decrementStock($cart);
+        // ── Step 4b: Bank transfer — reserve stock, admin confirms later ───────
+        if ($order->payment_method === 'bank_transfer') {
+            $this->reserveStock->handle($order->load('items'), 'bank_transfer');
+            session()->forget('cart');
+            session(['order_success' => $order->order_number]);
+            SendOrderNotificationsJob::dispatch($order->id, tenant()->getTenantKey());
 
+            return redirect()->route('checkout.success');
+        }
+
+        // ── Step 4c: COD — immediate stock deduction ───────────────────────────
+        $this->decrementStock->handle($cart, $order);
         session()->forget('cart');
         session(['order_success' => $order->order_number]);
-
-        Mail::to($order->customer_email)->send(new OrderCreatedMail($order));
-
-        $adminEmail = Setting::get('contact_email', config('mail.from.address'));
-        if ($adminEmail) {
-            Mail::to($adminEmail)->send(new NewOrderMail($order));
-        }
-
-        try {
-            (new WhatsAppService)->sendOrderCreated($order->load('items'));
-        } catch (\Throwable) {
-            // WhatsApp gagal tidak boleh batalkan order
-        }
+        SendOrderNotificationsJob::dispatch($order->id, tenant()->getTenantKey());
 
         return redirect()->route('checkout.success');
     }
@@ -196,40 +147,17 @@ class CheckoutController extends Controller
             return redirect()->route('home');
         }
 
-        $request->validate([
-            'proof' => ['required', 'file', 'image', 'max:5120'],
-        ]);
+        $request->validate(['proof' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120']]);
 
         $order = Order::where('order_number', $orderNumber)->firstOrFail();
 
-        if ($order->payment_proof) {
-            Storage::disk('public')->delete($order->payment_proof);
-        }
-
-        $path = $request->file('proof')->store(tenant_storage_prefix() . 'payment-proofs', 'public');
-        $order->update(['payment_proof' => $path]);
+        $this->uploadProof->handle($order, $request->file('proof'));
 
         return back()->with('proof_uploaded', true);
     }
 
     private function bankAccounts(): array
     {
-        $raw = Setting::get('bank_accounts', '[]');
-        return json_decode($raw, true) ?: [];
-    }
-
-    public static function decrementStock(array $cart): void
-    {
-        foreach ($cart as $item) {
-            if ($item['variant_id']) {
-                $variant = ProductVariant::find($item['variant_id']);
-                $variant?->decrementStock($item['quantity']);
-            } else {
-                $product = Product::find($item['product_id']);
-                if ($product && $product->track_stock) {
-                    $product->decrement('inventory_quantity', $item['quantity']);
-                }
-            }
-        }
+        return json_decode(Setting::get('bank_accounts', '[]'), true) ?: [];
     }
 }

@@ -26,8 +26,8 @@ class CartController extends Controller
 
         $product = Product::with('featuredImage')->findOrFail($request->product_id);
         $variant = $request->variant_id
-            ? ProductVariant::find($request->variant_id)
-            : $product->variants()->orderBy('position')->first();
+            ? ProductVariant::with('image')->find($request->variant_id)
+            : $product->variants()->with('image')->orderBy('position')->first();
 
         // Validasi stok sebelum ditambahkan ke keranjang
         if ($variant) {
@@ -47,11 +47,11 @@ class CartController extends Controller
             ? collect([$variant->option1, $variant->option2, $variant->option3])->filter()->implode(' / ')
             : null;
 
-        $image = null;
-        if ($product->featuredImage) {
-            $image = parse_url($product->featuredImage->url, PHP_URL_PATH)
-                     ?? '/storage/' . $product->featuredImage->path;
-        }
+        // Prefer variant image; fall back to product featured image
+        $imageSource = $variant?->image ?? $product->featuredImage;
+        $image       = $imageSource
+            ? (parse_url($imageSource->url, PHP_URL_PATH) ?? '/storage/' . $imageSource->path)
+            : null;
 
         $cart = session('cart', []);
 

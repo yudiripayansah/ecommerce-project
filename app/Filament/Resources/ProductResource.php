@@ -266,6 +266,109 @@ class ProductResource extends Resource
                                         ->columnSpanFull(),
                                 ]),
 
+                                // ── Variant image ─────────────────────────────────
+                                TextInput::make('_image_filename')
+                                    ->label('Gambar variant')
+                                    ->readOnly()
+                                    ->dehydrated(false)
+                                    ->placeholder('Opsional — tampil di cart & storefront')
+                                    ->afterStateHydrated(function (Get $get, Set $set): void {
+                                        $fileId = $get('store_file_id');
+                                        if ($fileId) {
+                                            $file = StoreFile::find($fileId);
+                                            $set('_image_filename', $file?->filename);
+                                        }
+                                    })
+                                    ->hintActions([
+                                        Action::make('pick_variant_image')
+                                            ->label('Pilih')
+                                            ->icon('heroicon-o-photo')
+                                            ->color('gray')
+                                            ->modalHeading('Pilih gambar variant')
+                                            ->modalWidth('4xl')
+                                            ->schema([
+                                                Tabs::make()->tabs([
+                                                    Tab::make('Upload')
+                                                        ->icon('heroicon-o-arrow-up-tray')
+                                                        ->schema([
+                                                            FileUpload::make('upload_file')
+                                                                ->label(false)
+                                                                ->disk('public')
+                                                                ->directory(tenant_storage_prefix() . 'store-files/' . now()->format('Y/m'))
+                                                                ->visibility('public')
+                                                                ->image()
+                                                                ->acceptedFileTypes([
+                                                                    'image/jpeg', 'image/jpg', 'image/png',
+                                                                    'image/webp', 'image/gif', 'image/svg+xml',
+                                                                ])
+                                                                ->storeFileNamesIn('upload_original_name')
+                                                                ->maxSize(10_240)
+                                                                ->imagePreviewHeight('160')
+                                                                ->helperText('Gambar saja · Maks 10 MB'),
+                                                        ]),
+                                                    Tab::make('From Files library')
+                                                        ->icon('heroicon-o-folder-open')
+                                                        ->schema([
+                                                            CheckboxList::make('file_id')
+                                                                ->label(false)
+                                                                ->options(fn (): array => StoreFile::where('mime_type', 'like', 'image/%')
+                                                                    ->orderByDesc('created_at')
+                                                                    ->limit(200)
+                                                                    ->get()
+                                                                    ->mapWithKeys(function (StoreFile $f): array {
+                                                                        $src   = e(parse_url($f->url, PHP_URL_PATH) ?? ('/storage/' . $f->path));
+                                                                        $label = '<span style="display:flex;align-items:center;gap:10px;padding:4px 0;">'
+                                                                               . '<img src="' . $src . '" style="width:56px;height:56px;object-fit:cover;border-radius:6px;flex-shrink:0;" />'
+                                                                               . '<span style="font-size:13px;font-weight:500;">' . e($f->filename) . '</span>'
+                                                                               . '</span>';
+                                                                        return [$f->id => $label];
+                                                                    })
+                                                                    ->all()
+                                                                )
+                                                                ->allowHtml()
+                                                                ->searchable()
+                                                                ->columns(2)
+                                                                ->gridDirection('row'),
+                                                        ]),
+                                                ]),
+                                            ])
+                                            ->action(function (array $data, Set $set): void {
+                                                $file = null;
+
+                                                if (! empty($data['upload_file'])) {
+                                                    $path = $data['upload_file'];
+                                                    $file = StoreFile::firstOrCreate(
+                                                        ['path' => $path, 'disk' => 'public'],
+                                                        static::buildStoreFileAttributes(
+                                                            $path,
+                                                            $data['upload_original_name'][$path] ?? basename($path)
+                                                        )
+                                                    );
+                                                } elseif (! empty($data['file_id'])) {
+                                                    $id   = is_array($data['file_id']) ? reset($data['file_id']) : $data['file_id'];
+                                                    $file = StoreFile::find($id);
+                                                }
+
+                                                if ($file) {
+                                                    $set('store_file_id', $file->id);
+                                                    $set('_image_filename', $file->filename);
+                                                }
+                                            }),
+
+                                        Action::make('remove_variant_image')
+                                            ->label('Hapus')
+                                            ->color('danger')
+                                            ->icon('heroicon-o-trash')
+                                            ->visible(fn (Get $get) => (bool) $get('store_file_id'))
+                                            ->requiresConfirmation()
+                                            ->action(function (Set $set): void {
+                                                $set('store_file_id', null);
+                                                $set('_image_filename', null);
+                                            }),
+                                    ]),
+
+                                Hidden::make('store_file_id'),
+
                                 // Hidden fields — managed by generateVariants()
                                 Hidden::make('option1'),
                                 Hidden::make('option2'),
@@ -753,6 +856,8 @@ class ProductResource extends Resource
                     'compare_at_price'   => $get('compare_at_price') ?: null,
                     'sku'                => null,
                     'barcode'            => null,
+                    'store_file_id'      => null,
+                    '_image_filename'    => null,
                     'inventory_quantity' => 0,
                     'weight'             => null,
                     'weight_unit'        => 'kg',

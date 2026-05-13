@@ -3,9 +3,7 @@
 namespace App\Filament\Resources\OrderResource\Pages;
 
 use App\Filament\Resources\OrderResource;
-use App\Http\Controllers\CheckoutController;
-use App\Mail\Customer\OrderStatusUpdatedMail;
-use App\Services\WhatsAppService;
+use App\Jobs\SendOrderStatusNotificationJob;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -13,10 +11,8 @@ use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Pages\ViewRecord;
-use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Facades\Mail;
 
 class ViewOrder extends ViewRecord
 {
@@ -69,28 +65,11 @@ class ViewOrder extends ViewRecord
 
                     $this->record->update(['status' => $newStatus]);
 
-                    // Decrement stok saat admin manual set ke processing (COD/bank_transfer)
-                    if ($newStatus === 'processing' && $oldStatus === 'pending'
-                        && in_array($this->record->payment_method, ['cod', 'bank_transfer'])) {
-                        CheckoutController::decrementStock(
-                            $this->record->items->map(fn ($i) => [
-                                'variant_id' => $i->variant_id,
-                                'product_id' => $i->product_id,
-                                'quantity'   => $i->quantity,
-                            ])->all()
-                        );
-                    }
-
-                    try {
-                        Mail::to($this->record->customer_email)
-                            ->send(new OrderStatusUpdatedMail($this->record, $oldStatus));
-                    } catch (\Throwable) {}
-
-                    try {
-                        if ($newStatus === 'shipped' && $this->record->tracking_number) {
-                            (new WhatsAppService)->sendShipped($this->record);
-                        }
-                    } catch (\Throwable) {}
+                    SendOrderStatusNotificationJob::dispatch(
+                        $this->record->id,
+                        $oldStatus,
+                        tenant()->getTenantKey()
+                    );
 
                     $this->refreshFormData(['status']);
                 }),

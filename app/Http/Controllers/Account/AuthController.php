@@ -3,13 +3,10 @@
 namespace App\Http\Controllers\Account;
 
 use App\Http\Controllers\Controller;
-use App\Mail\Admin\NewCustomerMail;
-use App\Mail\Customer\WelcomeMail;
+use App\Jobs\SendWelcomeEmailJob;
 use App\Models\Customer;
-use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
@@ -55,12 +52,7 @@ class AuthController extends Controller
 
         $customer = Customer::create($validated);
 
-        Mail::to($customer->email)->send(new WelcomeMail($customer));
-
-        $adminEmail = Setting::get('contact_email', config('mail.from.address'));
-        if ($adminEmail) {
-            Mail::to($adminEmail)->send(new NewCustomerMail($customer));
-        }
+        SendWelcomeEmailJob::dispatch($customer->id, tenant()->getTenantKey());
 
         Auth::guard('customer')->login($customer);
 

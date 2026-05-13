@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Gracefully skips central domains and unknown domains.
         $middleware->prependToGroup('web', \App\Http\Middleware\InitializeTenancyByDomainIfTenant::class);
         $middleware->appendToGroup('web', \App\Http\Middleware\ApplyStoreTheme::class);
+        $middleware->appendToGroup('web', \App\Http\Middleware\SecurityHeaders::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
