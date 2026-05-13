@@ -5,20 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class CheckoutIdempotency extends Model
+class CheckoutProcess extends Model
 {
     protected $fillable = [
         'idempotency_key',
         'order_id',
-        'status',
-        'error_code',
-        'error_message',
-        'request_hash',
-        'expires_at',
+        'state',
+        'context',
+        'last_error_code',
+        'last_error_message',
+        'last_transition_at',
     ];
 
     protected $casts = [
-        'expires_at' => 'datetime',
+        'context'            => 'array',
+        'last_transition_at' => 'datetime',
     ];
 
     public function order(): BelongsTo
